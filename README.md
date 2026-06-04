@@ -1,0 +1,39 @@
+# Local Markdown File Renderer
+
+Render a Markdown file from disk in your browser. Edit the file in any editor or with an AI agent, then refresh the page to see the latest rendered version.
+
+## Install
+
+```sh
+npm install
+```
+
+## Render a File
+
+```sh
+npm start -- /absolute/path/to/file.md
+```
+
+Open the URL printed by the server. It will look like:
+
+```txt
+http://127.0.0.1:5173/?file=%2Fabsolute%2Fpath%2Fto%2Ffile.md
+```
+
+You can also start the app without a file and paste an absolute Markdown path into the browser UI:
+
+```sh
+npm start
+```
+
+## How Refresh Works
+
+The browser page stores the file path in the URL. Every page load calls the local server, and the server reads the Markdown file fresh from disk before rendering it. That means normal browser refresh works the way it does for local HTML files.
+
+There is also an `Auto refresh` toggle if you want the page to poll the file every second while an agent is editing it.
+
+## Notes
+
+- The server binds to `127.0.0.1` by default.
+- Markdown HTML is enabled, so trusted local Markdown can include inline HTML.
+- This is a local tool intended for files on your own machine.

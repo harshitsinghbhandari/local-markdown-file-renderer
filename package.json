@@ -1,0 +1,17 @@
+{
+  "name": "local-markdown-file-renderer",
+  "version": "1.0.0",
+  "description": "Render local Markdown files in the browser and refresh to see disk changes.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "highlight.js": "^11.10.0",
+    "markdown-it": "^14.1.0"
+  },
+  "devDependencies": {}
+}

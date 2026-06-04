@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Local Markdown Renderer</title>
+    <link rel="stylesheet" href="/vendor/highlight/github.min.css">
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="toolbar" aria-label="Markdown file controls">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">MD</span>
+          <div>
+            <h1>Local Markdown Renderer</h1>
+            <p>Point at a file. Edit it anywhere. Refresh this page.</p>
+          </div>
+        </div>
+
+        <form class="file-form" id="file-form">
+          <label for="file-input">Markdown file path</label>
+          <div class="path-row">
+            <input
+              id="file-input"
+              name="file"
+              type="text"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="/absolute/path/to/file.md"
+            >
+            <button type="submit">Render</button>
+          </div>
+        </form>
+
+        <div class="actions">
+          <button type="button" id="refresh-button">Refresh</button>
+          <label class="toggle">
+            <input type="checkbox" id="auto-refresh">
+            <span>Auto refresh</span>
+          </label>
+        </div>
+      </section>
+
+      <section class="status" id="status" aria-live="polite"></section>
+
+      <article class="document markdown-body" id="document">
+        <div class="empty-state">
+          <h2>No file loaded</h2>
+          <p>Start the server with a file path, or paste an absolute Markdown path above.</p>
+          <code>npm start -- /absolute/path/to/file.md</code>
+        </div>
+      </article>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>
