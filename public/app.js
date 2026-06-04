@@ -36,7 +36,7 @@ async function loadFile(file) {
   activeFile = file.trim();
 
   if (!activeFile) {
-    setStatus("Paste an absolute Markdown file path to render it.", "neutral");
+    setStatus("Paste an absolute Markdown file path or URL to render it.", "neutral");
     return;
   }
 
@@ -56,8 +56,18 @@ async function loadFile(file) {
     document.title = `${payload.name} - Local Markdown Renderer`;
     documentNode.innerHTML = payload.html;
     setFileInUrl(payload.file);
+
+    const sourceDetail = payload.sourceType === "url"
+      ? [
+          `<span>${payload.directory}</span>`,
+          payload.fromCache ? "<span>Cached copy</span>" : "<span>Fetched fresh</span>",
+          payload.cachedFile ? `<span>Cache ${payload.cacheKey}</span>` : "",
+          payload.warning ? `<span>${payload.warning}</span>` : ""
+        ].filter(Boolean).join("")
+      : `<span>${payload.directory}</span>`;
+
     setStatus(
-      `<strong>${payload.name}</strong><span>${payload.directory}</span><span>${formatBytes(payload.size)}</span><span>Modified ${formatTime(payload.modifiedAt)}</span>`,
+      `<strong>${payload.name}</strong>${sourceDetail}<span>${formatBytes(payload.size)}</span><span>Updated ${formatTime(payload.modifiedAt)}</span>`,
       "ready"
     );
   } catch (error) {

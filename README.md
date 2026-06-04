@@ -35,6 +35,12 @@ Paste any absolute Markdown path into the UI. You can also start the daemon with
 mdview up /absolute/path/to/file.md --open
 ```
 
+Remote Markdown URLs work too:
+
+```sh
+mdview up https://raw.githubusercontent.com/aoagents/ReverbCode/refs/heads/main/README.md --open
+```
+
 Stop the daemon:
 
 ```sh
@@ -48,6 +54,8 @@ mdview status
 ```
 
 Daemon state is stored in `~/.mdview/state.json`; logs are written to `~/.mdview/mdview.log`.
+
+Remote Markdown is cached under `~/.mdview/cache/`. Each URL gets a stable hash-based cache file, plus metadata in `~/.mdview/cache/index.json`. On refresh, mdview tries to fetch the URL again; if the network request fails and a cached copy exists, it renders the cached copy.
 
 You can still run the server directly:
 
@@ -69,7 +77,7 @@ npm start
 
 ## How Refresh Works
 
-The browser page stores the file path in the URL. Every page load calls the local server, and the server reads the Markdown file fresh from disk before rendering it. That means normal browser refresh works the way it does for local HTML files.
+The browser page stores the file path or URL in the URL. Every page load calls the local server, and the server reads the Markdown file fresh from disk or fetches the remote URL before rendering it. That means normal browser refresh works the way it does for local HTML files.
 
 There is also an `Auto refresh` toggle if you want the page to poll the file every second while an agent is editing it.
 
@@ -77,4 +85,5 @@ There is also an `Auto refresh` toggle if you want the page to poll the file eve
 
 - The server binds to `127.0.0.1` by default.
 - Markdown HTML is enabled, so trusted local Markdown can include inline HTML.
+- Raw HTML is disabled for remote Markdown URLs because those files may be untrusted.
 - This is a local tool intended for files on your own machine.

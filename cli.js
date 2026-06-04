@@ -24,14 +24,15 @@ function usage() {
   console.log(`mdview - local Markdown renderer daemon
 
 Usage:
-  mdview up [file.md] [--port 5898] [--open]
+  mdview up [file.md|url] [--port 5898] [--open]
   mdview down
   mdview status
-  mdview url [file.md]
+  mdview url [file.md|url]
 
 Examples:
   mdview up
   mdview up ./README.md --open
+  mdview up https://raw.githubusercontent.com/aoagents/ReverbCode/refs/heads/main/README.md --open
   mdview url /absolute/path/to/file.md`);
 }
 
@@ -126,13 +127,26 @@ async function waitForServer(port) {
   return false;
 }
 
-function urlFor(file, port = defaultPort) {
+function isHttpUrl(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function normalizeSource(value) {
+  return isHttpUrl(value) ? value : path.resolve(value);
+}
+
+function urlFor(source, port = defaultPort) {
   const base = `http://${host}:${port}/`;
 
-  if (!file) return base;
+  if (!source) return base;
 
   const url = new URL(base);
-  url.searchParams.set("file", path.resolve(file));
+  url.searchParams.set("file", normalizeSource(source));
   return url.toString();
 }
 
@@ -153,7 +167,7 @@ function openUrl(url) {
 
 async function up(values) {
   const options = parseOptions(values);
-  const file = options.positional[0] ? path.resolve(options.positional[0]) : "";
+  const source = options.positional[0] ? normalizeSource(options.positional[0]) : "";
   const existing = await readState();
 
   if (existing && processIsRunning(existing.pid) && await canConnect(existing.port)) {
@@ -175,7 +189,7 @@ async function up(values) {
   await ensureStateDir();
 
   const logFd = fs.openSync(logFile, "a");
-  const child = spawn(process.execPath, file ? [serverPath, file] : [serverPath], {
+  const child = spawn(process.execPath, source ? [serverPath, source] : [serverPath], {
     detached: true,
     env: {
       ...process.env,
@@ -192,8 +206,8 @@ async function up(values) {
     pid: child.pid,
     port: options.port,
     host,
-    url: urlFor(file, options.port),
-    defaultFile: file,
+    url: urlFor(source, options.port),
+    defaultFile: source,
     logFile,
     startedAt: new Date().toISOString()
   };

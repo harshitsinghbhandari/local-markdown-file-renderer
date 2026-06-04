@@ -1,6 +1,6 @@
 {
   "name": "@thisishsb/mdview",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Render local Markdown files in the browser and refresh to see disk changes.",
   "type": "module",
   "license": "MIT",

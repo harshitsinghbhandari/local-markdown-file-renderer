@@ -19,7 +19,7 @@
         </div>
 
         <form class="file-form" id="file-form">
-          <label for="file-input">Markdown file path</label>
+          <label for="file-input">Markdown file path or URL</label>
           <div class="path-row">
             <input
               id="file-input"
@@ -27,7 +27,7 @@
               type="text"
               autocomplete="off"
               spellcheck="false"
-              placeholder="/absolute/path/to/file.md"
+              placeholder="/absolute/path/to/file.md or https://raw.githubusercontent.com/.../README.md"
             >
             <button type="submit">Render</button>
           </div>
@@ -47,8 +47,8 @@
       <article class="document markdown-body" id="document">
         <div class="empty-state">
           <h2>No file loaded</h2>
-          <p>Start the server with a file path, or paste an absolute Markdown path above.</p>
-          <code>npm start -- /absolute/path/to/file.md</code>
+          <p>Start the server with a file path or URL, or paste one above.</p>
+          <code>mdview up /absolute/path/to/file.md</code>
         </div>
       </article>
     </main>
