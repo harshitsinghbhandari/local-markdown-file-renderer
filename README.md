@@ -87,3 +87,23 @@ There is also an `Auto refresh` toggle if you want the page to poll the file eve
 - Markdown HTML is enabled, so trusted local Markdown can include inline HTML.
 - Raw HTML is disabled for remote Markdown URLs because those files may be untrusted.
 - This is a local tool intended for files on your own machine.
+
+## Release
+
+Publishing is automated with GitHub Actions when a version tag is pushed.
+
+One-time npm setup:
+
+1. In npm, add GitHub Actions as a trusted publisher for `@thisishsb/mdview`.
+2. Use repository `harshitsinghbhandari/local-markdown-file-renderer`.
+3. Use workflow filename `publish.yml`.
+4. Allow the `npm publish` action.
+
+Release a new version:
+
+```sh
+npm version patch
+git push
+VERSION="$(node -p "require('./package.json').version")"
+git push origin "v$VERSION"
+```
