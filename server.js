@@ -1,4 +1,5 @@
 import express from "express";
+import fsSync from "node:fs";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -9,9 +10,14 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const port = Number(process.env.PORT || 5173);
+const port = Number(process.env.PORT || 5898);
 const host = process.env.HOST || "127.0.0.1";
-const defaultFile = process.argv[2] ? path.resolve(process.argv[2]) : "";
+const fallbackDefaultFile = path.resolve(process.cwd(), "README.md");
+const defaultFile = process.argv[2]
+  ? path.resolve(process.argv[2])
+  : fsSync.existsSync(fallbackDefaultFile)
+    ? fallbackDefaultFile
+    : "";
 
 const md = new MarkdownIt({
   html: true,
@@ -79,9 +85,19 @@ app.get("/api/render", async (req, res) => {
   }
 });
 
-app.listen(port, host, () => {
+const server = app.listen(port, host, () => {
   const target = defaultFile ? `/?file=${encodeURIComponent(defaultFile)}` : "/";
 
   console.log(`Local Markdown Renderer running at http://${host}:${port}${target}`);
   console.log("Pass a Markdown path with: npm start -- /absolute/path/to/file.md");
 });
+
+function shutdown(signal) {
+  console.log(`Received ${signal}; shutting down.`);
+  server.close(() => {
+    process.exit(0);
+  });
+}
+
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);

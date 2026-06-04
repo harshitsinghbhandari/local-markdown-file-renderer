@@ -10,6 +10,41 @@ npm install
 
 ## Render a File
 
+For day-to-day use, run the daemon:
+
+```sh
+npm link
+mdview up
+```
+
+Then open:
+
+```txt
+http://127.0.0.1:5898/
+```
+
+Paste any absolute Markdown path into the UI. You can also start the daemon with a file already loaded:
+
+```sh
+mdview up /absolute/path/to/file.md --open
+```
+
+Stop the daemon:
+
+```sh
+mdview down
+```
+
+Check whether it is running:
+
+```sh
+mdview status
+```
+
+Daemon state is stored in `~/.mdview/state.json`; logs are written to `~/.mdview/mdview.log`.
+
+You can still run the server directly:
+
 ```sh
 npm start -- /absolute/path/to/file.md
 ```
@@ -17,7 +52,7 @@ npm start -- /absolute/path/to/file.md
 Open the URL printed by the server. It will look like:
 
 ```txt
-http://127.0.0.1:5173/?file=%2Fabsolute%2Fpath%2Fto%2Ffile.md
+http://127.0.0.1:5898/?file=%2Fabsolute%2Fpath%2Fto%2Ffile.md
 ```
 
 You can also start the app without a file and paste an absolute Markdown path into the browser UI:

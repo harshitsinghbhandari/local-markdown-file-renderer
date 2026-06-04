@@ -20,6 +20,7 @@ The user wants a local tool, not a hosted publishing system. Preserve these prop
 ## Current Architecture
 
 - `server.js` starts an Express server and exposes `/api/render?file=...`.
+- `cli.js` exposes the `mdview` command for daemon control.
 - `/api/render` resolves the requested path, reads the file fresh from disk, renders Markdown with `markdown-it`, and returns HTML plus file metadata.
 - `public/app.js` stores the active file path in the URL, calls `/api/render`, and injects the rendered HTML into the page.
 - `public/index.html` and `public/styles.css` provide the browser UI.
@@ -33,6 +34,18 @@ npm install
 ```
 
 Render a specific file:
+
+```sh
+mdview up /absolute/path/to/file.md --open
+```
+
+Stop the daemon:
+
+```sh
+mdview down
+```
+
+Run the server directly without the daemon:
 
 ```sh
 npm start -- /absolute/path/to/file.md
@@ -56,13 +69,16 @@ After code changes, run:
 
 ```sh
 node --check server.js
-npm start -- idea.md
+node --check cli.js
+node cli.js up README.md
 ```
 
 Then verify:
 
-- `http://127.0.0.1:5173/` serves the app shell.
+- `http://127.0.0.1:5898/` serves the app shell.
 - `/api/render?file=<absolute markdown path>` returns rendered HTML.
 - Editing the Markdown file and calling the render endpoint again returns the changed content.
+- `node cli.js status` reports the daemon.
+- `node cli.js down` stops the daemon.
 
 Use a temporary Markdown file outside the repo when checking arbitrary-path support.

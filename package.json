@@ -4,6 +4,9 @@
   "description": "Render local Markdown files in the browser and refresh to see disk changes.",
   "type": "module",
   "private": true,
+  "bin": {
+    "mdview": "./cli.js"
+  },
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js"
