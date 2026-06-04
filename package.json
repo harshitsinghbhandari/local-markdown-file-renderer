@@ -1,5 +1,5 @@
 {
-  "name": "@theharshitsingh/mdview",
+  "name": "@thisishsb/mdview",
   "version": "0.1.0",
   "description": "Render local Markdown files in the browser and refresh to see disk changes.",
   "type": "module",

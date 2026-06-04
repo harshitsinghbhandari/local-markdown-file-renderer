@@ -5,7 +5,7 @@ Render a Markdown file from disk in your browser. Edit the file in any editor or
 ## Install
 
 ```sh
-npm install -g @theharshitsingh/mdview
+npm install -g @thisishsb/mdview
 ```
 
 For local development from this repo:
