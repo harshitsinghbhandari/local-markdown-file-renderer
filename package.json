@@ -1,15 +1,44 @@
 {
-  "name": "local-markdown-file-renderer",
-  "version": "1.0.0",
+  "name": "@theharshitsingh/mdview",
+  "version": "0.1.0",
   "description": "Render local Markdown files in the browser and refresh to see disk changes.",
   "type": "module",
-  "private": true,
+  "license": "MIT",
+  "author": "Harshit Singh Bhandari",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/harshitsinghbhandari/local-markdown-file-renderer.git"
+  },
+  "bugs": {
+    "url": "https://github.com/harshitsinghbhandari/local-markdown-file-renderer/issues"
+  },
+  "homepage": "https://github.com/harshitsinghbhandari/local-markdown-file-renderer#readme",
+  "keywords": [
+    "markdown",
+    "local",
+    "viewer",
+    "renderer",
+    "daemon",
+    "cli"
+  ],
+  "files": [
+    "cli.js",
+    "server.js",
+    "public",
+    "README.md",
+    "LICENSE"
+  ],
   "bin": {
-    "mdview": "./cli.js"
+    "mdview": "cli.js"
   },
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "check": "node --check server.js && node --check cli.js",
+    "prepublishOnly": "npm run check"
+  },
+  "engines": {
+    "node": ">=18"
   },
   "dependencies": {
     "express": "^4.19.2",
