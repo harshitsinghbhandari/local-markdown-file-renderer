@@ -7,12 +7,12 @@
   "author": "Harshit Singh Bhandari",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/harshitsinghbhandari/local-markdown-file-renderer.git"
+    "url": "git+https://github.com/harshitsinghbhandari/mdview.git"
   },
   "bugs": {
-    "url": "https://github.com/harshitsinghbhandari/local-markdown-file-renderer/issues"
+    "url": "https://github.com/harshitsinghbhandari/mdview/issues"
   },
-  "homepage": "https://github.com/harshitsinghbhandari/local-markdown-file-renderer#readme",
+  "homepage": "https://github.com/harshitsinghbhandari/mdview#readme",
   "keywords": [
     "markdown",
     "local",

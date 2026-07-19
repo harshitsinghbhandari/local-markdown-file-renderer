@@ -108,7 +108,7 @@ Publishing is automated with GitHub Actions when a version tag is pushed.
 One-time npm setup:
 
 1. In npm, add GitHub Actions as a trusted publisher for `@thisishsb/mdview` and `@theharshitsingh/mdview`.
-2. Use repository `harshitsinghbhandari/local-markdown-file-renderer`.
+2. Use repository `harshitsinghbhandari/mdview`.
 3. Use workflow filename `publish.yml`.
 4. Allow the `npm publish` action.
 
