@@ -1,3 +1,4 @@
+const toolbar = document.querySelector(".toolbar");
 const form = document.querySelector("#file-form");
 const input = document.querySelector("#file-input");
 const documentNode = document.querySelector("#document");
@@ -94,6 +95,16 @@ function setAutoRefresh(enabled) {
     }, 1000);
   }
 }
+
+let lastScrollY = window.scrollY;
+
+window.addEventListener("scroll", () => {
+  const y = window.scrollY;
+  const hide = y > lastScrollY && y > 80 && !toolbar.contains(document.activeElement);
+
+  toolbar.classList.toggle("hidden", hide);
+  lastScrollY = y;
+}, { passive: true });
 
 form.addEventListener("submit", (event) => {
   event.preventDefault();

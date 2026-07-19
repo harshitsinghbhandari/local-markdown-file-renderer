@@ -52,6 +52,11 @@ input {
   background: rgba(251, 250, 245, 0.94);
   box-shadow: var(--shadow);
   backdrop-filter: blur(16px);
+  transition: transform 0.25s ease;
+}
+
+.toolbar.hidden {
+  transform: translateY(calc(-100% - 40px));
 }
 
 .brand {

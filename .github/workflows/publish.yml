@@ -41,5 +41,10 @@ jobs:
       - name: Check package
         run: npm run check
 
-      - name: Publish
+      - name: Publish @thisishsb/mdview
         run: npm publish --access public
+
+      - name: Publish @theharshitsingh/mdview
+        run: |
+          npm pkg set name=@theharshitsingh/mdview
+          npm publish --access public

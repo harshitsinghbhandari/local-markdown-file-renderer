@@ -24,21 +24,22 @@ function usage() {
   console.log(`mdview - local Markdown renderer daemon
 
 Usage:
-  mdview up [file.md|url] [--port 5898] [--open]
+  mdview up [file.md|url] [--port 5898] [--open] [--copy]
   mdview down
   mdview status
-  mdview url [file.md|url]
+  mdview url [file.md|url] [--copy]
 
 Examples:
   mdview up
   mdview up ./README.md --open
   mdview up https://raw.githubusercontent.com/aoagents/ReverbCode/refs/heads/main/README.md --open
-  mdview url /absolute/path/to/file.md`);
+  mdview url /absolute/path/to/file.md --copy`);
 }
 
 function parseOptions(values) {
   const options = {
     open: false,
+    copy: false,
     port: defaultPort,
     positional: []
   };
@@ -48,6 +49,8 @@ function parseOptions(values) {
 
     if (value === "--open") {
       options.open = true;
+    } else if (value === "--copy") {
+      options.copy = true;
     } else if (value === "--port") {
       const port = Number(values[index + 1]);
 
@@ -150,6 +153,34 @@ function urlFor(source, port = defaultPort) {
   return url.toString();
 }
 
+// ponytail: linux assumes xclip; add wl-copy/xsel fallbacks if someone hits it
+function copyToClipboard(text) {
+  return new Promise((resolve) => {
+    const platform = process.platform;
+    const [command, commandArgs] = platform === "darwin"
+      ? ["pbcopy", []]
+      : platform === "win32"
+        ? ["clip", []]
+        : ["xclip", ["-selection", "clipboard"]];
+
+    const child = spawn(command, commandArgs, { stdio: ["pipe", "ignore", "ignore"] });
+
+    child.once("error", () => resolve(false));
+    child.once("close", (code) => resolve(code === 0));
+    child.stdin.end(text);
+  });
+}
+
+async function maybeCopy(options, url) {
+  if (!options.copy) return;
+
+  if (await copyToClipboard(url)) {
+    console.log("copied url to clipboard");
+  } else {
+    console.error("Could not copy to clipboard.");
+  }
+}
+
 function openUrl(url) {
   const platform = process.platform;
   const opener = platform === "darwin"
@@ -171,8 +202,12 @@ async function up(values) {
   const existing = await readState();
 
   if (existing && processIsRunning(existing.pid) && await canConnect(existing.port)) {
+    const url = source ? urlFor(source, existing.port) : existing.url;
+
     console.log(`mdview is already running on ${existing.url}`);
+    if (source) console.log(`url: ${url}`);
     console.log(`pid: ${existing.pid}`);
+    await maybeCopy(options, url);
     return;
   }
 
@@ -228,6 +263,7 @@ async function up(values) {
   console.log(`mdview is running at ${state.url}`);
   console.log(`pid: ${state.pid}`);
   console.log(`log: ${state.logFile}`);
+  await maybeCopy(options, state.url);
 
   if (options.open) {
     openUrl(state.url);
@@ -289,7 +325,9 @@ try {
     await status();
   } else if (command === "url") {
     const options = parseOptions(args.slice(1));
-    console.log(urlFor(options.positional[0], options.port));
+    const url = urlFor(options.positional[0], options.port);
+    console.log(url);
+    await maybeCopy(options, url);
   } else if (command === "help" || command === "--help" || command === "-h") {
     usage();
   } else {

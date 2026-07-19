@@ -8,6 +8,12 @@ Render a Markdown file from disk in your browser. Edit the file in any editor or
 npm install -g @thisishsb/mdview
 ```
 
+The same package is also published as `@theharshitsingh/mdview`:
+
+```sh
+npm install -g @theharshitsingh/mdview
+```
+
 For local development from this repo:
 
 ```sh
@@ -33,6 +39,13 @@ Paste any absolute Markdown path into the UI. You can also start the daemon with
 
 ```sh
 mdview up /absolute/path/to/file.md --open
+```
+
+Add `--copy` to `mdview up` or `mdview url` to copy the printed URL to the clipboard:
+
+```sh
+mdview up /absolute/path/to/file.md --copy
+mdview url /absolute/path/to/file.md --copy
 ```
 
 Remote Markdown URLs work too:
@@ -94,10 +107,12 @@ Publishing is automated with GitHub Actions when a version tag is pushed.
 
 One-time npm setup:
 
-1. In npm, add GitHub Actions as a trusted publisher for `@thisishsb/mdview`.
+1. In npm, add GitHub Actions as a trusted publisher for `@thisishsb/mdview` and `@theharshitsingh/mdview`.
 2. Use repository `harshitsinghbhandari/local-markdown-file-renderer`.
 3. Use workflow filename `publish.yml`.
 4. Allow the `npm publish` action.
+
+The workflow publishes `@thisishsb/mdview` first, then republishes the same tarball as `@theharshitsingh/mdview`.
 
 Release a new version:
 
