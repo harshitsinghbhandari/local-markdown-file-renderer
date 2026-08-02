@@ -35,7 +35,8 @@
     "start": "node server.js",
     "dev": "node server.js",
     "check": "node --check server.js && node --check cli.js",
-    "prepublishOnly": "npm run check"
+    "test": "node test-directory-mode.mjs",
+    "prepublishOnly": "npm run check && npm test"
   },
   "engines": {
     "node": ">=18"

@@ -48,6 +48,44 @@ mdview up /absolute/path/to/file.md --copy
 mdview url /absolute/path/to/file.md --copy
 ```
 
+## Browse a Folder
+
+Pass a directory, or any file inside one, and mdview serves that whole tree:
+
+```sh
+mdview up ~/courses --open
+```
+
+Inside that root:
+
+- relative links between Markdown files work, so `[schedule](schedule.md)` navigates;
+- a link to a directory opens its `README.md`, `index.md` or `course.md`, or a listing
+  when it has none;
+- PDFs, images, audio and video open in the browser, with seeking supported;
+- a filename in backticks becomes a link when a file of that name sits beside the
+  document or in one of its immediate subdirectories, which makes a hand-written index
+  clickable without rewriting it as links.
+
+Paths outside the root are refused, so the daemon cannot be used to read the rest of
+the disk. Widen or move the root with `--root`:
+
+```sh
+mdview up ~/courses/README.md --root ~/courses
+```
+
+## Start at Login
+
+On macOS, install a launchd agent so the server is always up and
+`http://127.0.0.1:5898/` is a stable bookmark:
+
+```sh
+mdview install ~/courses
+mdview uninstall
+```
+
+`mdview status` reports an installed agent, and `mdview down` will not stop one; use
+`uninstall`.
+
 Remote Markdown URLs work too:
 
 ```sh
@@ -96,7 +134,10 @@ There is also an `Auto refresh` toggle if you want the page to poll the file eve
 
 ## Notes
 
-- The server binds to `127.0.0.1` by default.
+- The server binds to `127.0.0.1` by default, and rejects requests whose `Host` header
+  is not its own address, which is what stops DNS rebinding from a hostile page.
+- Reads are confined to the served root. Before directory mode any absolute path could
+  be pasted into the toolbar; that now needs `--root`.
 - Markdown HTML is enabled, so trusted local Markdown can include inline HTML.
 - Raw HTML is disabled for remote Markdown URLs because those files may be untrusted.
 - This is a local tool intended for files on your own machine.

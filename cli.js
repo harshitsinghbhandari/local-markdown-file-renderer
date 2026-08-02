@@ -16,6 +16,9 @@ const defaultPort = 5898;
 const stateDir = process.env.MDVIEW_HOME || path.join(os.homedir(), ".mdview");
 const stateFile = path.join(stateDir, "state.json");
 const logFile = path.join(stateDir, "mdview.log");
+const agentLabel = "com.thisishsb.mdview";
+const agentDir = path.join(os.homedir(), "Library", "LaunchAgents");
+const agentPath = path.join(agentDir, `${agentLabel}.plist`);
 
 const args = process.argv.slice(2);
 const command = args[0] || "help";
@@ -24,16 +27,27 @@ function usage() {
   console.log(`mdview - local Markdown renderer daemon
 
 Usage:
-  mdview up [file.md|url] [--port 5898] [--open] [--copy]
+  mdview up [file.md|dir|url] [--root dir] [--port 5898] [--open] [--copy]
   mdview down
   mdview status
   mdview url [file.md|url] [--copy]
+  mdview install [file.md|dir] [--root dir] [--port 5898]
+  mdview uninstall
 
 Examples:
   mdview up
   mdview up ./README.md --open
+  mdview up ~/courses --open
   mdview up https://raw.githubusercontent.com/aoagents/ReverbCode/refs/heads/main/README.md --open
-  mdview url /absolute/path/to/file.md --copy`);
+  mdview url /absolute/path/to/file.md --copy
+  mdview install ~/courses
+
+Passing a directory, or a file inside one, serves that whole tree: relative links
+between Markdown files work, and PDFs, images and audio beside them open in the
+browser. Paths outside the root are refused.
+
+install writes a launchd agent so the server starts at login and stays up, which
+makes http://127.0.0.1:5898/ a stable bookmark. Remove it with uninstall.`);
 }
 
 function parseOptions(values) {
@@ -41,6 +55,7 @@ function parseOptions(values) {
     open: false,
     copy: false,
     port: defaultPort,
+    root: "",
     positional: []
   };
 
@@ -51,6 +66,15 @@ function parseOptions(values) {
       options.open = true;
     } else if (value === "--copy") {
       options.copy = true;
+    } else if (value === "--root") {
+      const root = values[index + 1];
+
+      if (!root) {
+        throw new Error("--root needs a directory.");
+      }
+
+      options.root = path.resolve(root);
+      index += 1;
     } else if (value === "--port") {
       const port = Number(values[index + 1]);
 
@@ -230,7 +254,8 @@ async function up(values) {
       ...process.env,
       HOST: host,
       PORT: String(options.port),
-      MDVIEW_DAEMON: "1"
+      MDVIEW_DAEMON: "1",
+      ...(options.root ? { MDVIEW_ROOT: options.root } : {})
     },
     stdio: ["ignore", logFd, logFd]
   });
@@ -301,11 +326,150 @@ async function down() {
   process.exitCode = 1;
 }
 
+function runCommand(command, commandArgs) {
+  return new Promise((resolve) => {
+    const child = spawn(command, commandArgs, { stdio: ["ignore", "pipe", "pipe"] });
+    let stderr = "";
+
+    child.stderr.on("data", (chunk) => { stderr += chunk; });
+    child.once("error", (error) => resolve({ code: 1, stderr: error.message }));
+    child.once("close", (code) => resolve({ code, stderr }));
+  });
+}
+
+function plistFor({ source, root, port }) {
+  const escape = (value) => value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+  const programArguments = [process.execPath, serverPath, ...(source ? [source] : [])]
+    .map((value) => `      <string>${escape(value)}</string>`)
+    .join("\n");
+
+  const environment = [
+    ["HOST", host],
+    ["PORT", String(port)],
+    ["MDVIEW_DAEMON", "1"],
+    ...(root ? [["MDVIEW_ROOT", root]] : [])
+  ]
+    .map(([key, value]) => `      <key>${key}</key>\n      <string>${escape(value)}</string>`)
+    .join("\n");
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+  <dict>
+    <key>Label</key>
+    <string>${agentLabel}</string>
+    <key>ProgramArguments</key>
+    <array>
+${programArguments}
+    </array>
+    <key>EnvironmentVariables</key>
+    <dict>
+${environment}
+    </dict>
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>${escape(logFile)}</string>
+    <key>StandardErrorPath</key>
+    <string>${escape(logFile)}</string>
+  </dict>
+</plist>
+`;
+}
+
+async function install(values) {
+  if (process.platform !== "darwin") {
+    console.error("install uses launchd and only works on macOS. Use `mdview up` elsewhere.");
+    process.exitCode = 1;
+    return;
+  }
+
+  const options = parseOptions(values);
+  const source = options.positional[0] ? normalizeSource(options.positional[0]) : "";
+
+  if (source && isHttpUrl(source)) {
+    console.error("install needs a local file or directory, not a URL.");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (source && !fs.existsSync(source)) {
+    console.error(`No such file or directory: ${source}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  // A running `mdview up` would hold the port and make launchd's copy crash-loop.
+  const existing = await readState();
+  if (existing && processIsRunning(existing.pid)) {
+    await down();
+  }
+
+  await ensureStateDir();
+  await fsp.mkdir(agentDir, { recursive: true });
+  await fsp.writeFile(agentPath, plistFor({ source, root: options.root, port: options.port }));
+
+  const target = `gui/${process.getuid()}`;
+  await runCommand("launchctl", ["bootout", `${target}/${agentLabel}`]);
+  const bootstrap = await runCommand("launchctl", ["bootstrap", target, agentPath]);
+
+  if (bootstrap.code !== 0) {
+    console.error(`Could not load the launchd agent: ${bootstrap.stderr.trim() || `exit ${bootstrap.code}`}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!await waitForServer(options.port)) {
+    console.error(`Agent loaded but the server did not answer. Check ${logFile}`);
+    process.exitCode = 1;
+    return;
+  }
+
+  console.log(`mdview installed and running at ${urlFor(source, options.port)}`);
+  console.log(`agent: ${agentPath}`);
+  console.log(`log: ${logFile}`);
+  console.log("Bookmark it. Remove with: mdview uninstall");
+}
+
+async function uninstall() {
+  if (process.platform !== "darwin") {
+    console.error("uninstall uses launchd and only works on macOS.");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (!fs.existsSync(agentPath)) {
+    console.log("No mdview launchd agent is installed.");
+    return;
+  }
+
+  await runCommand("launchctl", ["bootout", `gui/${process.getuid()}/${agentLabel}`]);
+  await fsp.rm(agentPath, { force: true });
+  console.log(`Removed ${agentPath}`);
+}
+
 async function status() {
   const state = await readState();
 
   if (!state || !processIsRunning(state.pid) || !await canConnect(state.port)) {
     if (state) await clearState();
+
+    // A launchd-installed server is not in state.json, so report the port directly.
+    if (await canConnect(defaultPort)) {
+      const installed = fs.existsSync(agentPath);
+      console.log(`mdview is answering on http://${host}:${defaultPort}/`);
+      console.log(installed
+        ? `started by launchd (${agentPath}); stop it with: mdview uninstall`
+        : "started outside this CLI; `mdview down` will not stop it.");
+      return;
+    }
+
     console.log("mdview is not running.");
     return;
   }
@@ -323,6 +487,10 @@ try {
     await down();
   } else if (command === "status") {
     await status();
+  } else if (command === "install") {
+    await install(args.slice(1));
+  } else if (command === "uninstall") {
+    await uninstall();
   } else if (command === "url") {
     const options = parseOptions(args.slice(1));
     const url = urlFor(options.positional[0], options.port);
