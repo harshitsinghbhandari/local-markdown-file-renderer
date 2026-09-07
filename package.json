@@ -1,6 +1,6 @@
 {
   "name": "@thisishsb/mdview",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Render local Markdown files in the browser and refresh to see disk changes.",
   "type": "module",
   "license": "MIT",
@@ -35,7 +35,7 @@
     "start": "node server.js",
     "dev": "node server.js",
     "check": "node --check server.js && node --check cli.js",
-    "test": "node test-directory-mode.mjs",
+    "test": "node test-directory-mode.mjs && node test-daemon-root.mjs",
     "prepublishOnly": "npm run check && npm test"
   },
   "engines": {

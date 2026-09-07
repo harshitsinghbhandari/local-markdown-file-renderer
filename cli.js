@@ -167,6 +167,11 @@ function normalizeSource(value) {
   return isHttpUrl(value) ? value : path.resolve(value);
 }
 
+function insideRoot(source, root) {
+  const relative = path.relative(root, source);
+  return relative === "" || (relative !== ".." && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative));
+}
+
 function urlFor(source, port = defaultPort) {
   const base = `http://${host}:${port}/`;
 
@@ -222,22 +227,57 @@ function openUrl(url) {
 
 async function up(values) {
   const options = parseOptions(values);
-  const source = options.positional[0] ? normalizeSource(options.positional[0]) : "";
+  let source = options.positional[0] ? normalizeSource(options.positional[0]) : "";
+  const requestedRoot = options.root || (process.env.MDVIEW_ROOT ? path.resolve(process.env.MDVIEW_ROOT) : "");
+
+  if (requestedRoot && source && !isHttpUrl(source) && !insideRoot(source, requestedRoot)) {
+    throw new Error(`That path is outside the requested root (${requestedRoot}). Choose a containing --root.`);
+  }
+
   const existing = await readState();
 
   if (existing && processIsRunning(existing.pid) && await canConnect(existing.port)) {
-    const url = source ? urlFor(source, existing.port) : existing.url;
+    let current;
+    try {
+      const response = await fetch(`http://${host}:${existing.port}/api/default-file`, {
+        signal: AbortSignal.timeout(2000)
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      current = await response.json();
+      if (typeof current.root !== "string" || !path.isAbsolute(current.root) || typeof current.file !== "string") {
+        throw new Error("invalid server configuration");
+      }
+    } catch (error) {
+      throw new Error(`Could not determine the running daemon's served root: ${error.message}`);
+    }
 
-    console.log(`mdview is already running on ${existing.url}`);
-    if (source) console.log(`url: ${url}`);
-    console.log(`pid: ${existing.pid}`);
-    await maybeCopy(options, url);
-    return;
-  }
+    const rootChanged = requestedRoot && requestedRoot !== path.resolve(current.root);
+    const sourceOutsideRoot = source && !isHttpUrl(source) && !insideRoot(source, current.root);
 
-  if (existing) {
+    if (!rootChanged && !sourceOutsideRoot) {
+      const url = source ? urlFor(source, existing.port) : existing.url;
+      console.log(`mdview is already running on ${existing.url}`);
+      if (source) console.log(`url: ${url}`);
+      console.log(`pid: ${existing.pid}`);
+      await maybeCopy(options, url);
+      if (options.open) openUrl(url);
+      return;
+    }
+
+    if (!source) {
+      source = current.file && (isHttpUrl(current.file) || insideRoot(current.file, requestedRoot))
+        ? current.file
+        : requestedRoot;
+    }
+    options.port = existing.port;
+    console.log("Restarting mdview to serve the requested root.");
+    await down();
+    if (await readState()) return;
+  } else if (existing) {
     await clearState();
   }
+
+  if (!source && requestedRoot) source = requestedRoot;
 
   if (await canConnect(options.port)) {
     console.error(`Port ${options.port} is already in use.`);

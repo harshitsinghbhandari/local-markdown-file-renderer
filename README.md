@@ -73,6 +73,12 @@ the disk. Widen or move the root with `--root`:
 mdview up ~/courses/README.md --root ~/courses
 ```
 
+`mdview up` reuses its running daemon when the requested file is inside the served
+root. Opening a path outside it restarts the daemon on the same port with the new
+path's root. Changing `--root` (or `MDVIEW_ROOT`) also restarts it. A local path must
+be inside an explicitly supplied root. Existing tabs outside the new root will no
+longer load; choose a shared parent with `--root` to keep both trees available.
+
 ## Start at Login
 
 On macOS, install a launchd agent so the server is always up and
